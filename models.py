@@ -34,18 +34,18 @@ class Likes(db.Model):
 
     id = db.Column(
         db.Integer,
-        primary_key=True
+        primary_key=True #autoincrement?
     )
 
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id', ondelete='cascade')
+        db.ForeignKey('users.id', ondelete='cascade') #does this cascase delete everything when a like is deleted or when a user is deleted?
     )
 
     message_id = db.Column(
         db.Integer,
         db.ForeignKey('messages.id', ondelete='cascade'),
-        unique=True
+        unique=True #what is the message? if unique is true, doesn't that mean each message can only have 1 like at most?
     )
 
 
@@ -56,7 +56,7 @@ class User(db.Model):
 
     id = db.Column(
         db.Integer,
-        primary_key=True,
+        primary_key=True, #autoincrement?
     )
 
     email = db.Column(
@@ -96,14 +96,14 @@ class User(db.Model):
 
     messages = db.relationship('Message')
 
-    followers = db.relationship(
+    followers = db.relationship( #this user's FOLLOWERS
         "User",
         secondary="follows",
-        primaryjoin=(Follows.user_being_followed_id == id),
+        primaryjoin=(Follows.user_being_followed_id == id), #primary vs secondary join?
         secondaryjoin=(Follows.user_following_id == id)
     )
 
-    following = db.relationship(
+    following = db.relationship( #users which this user is FOLLOWING
         "User",
         secondary="follows",
         primaryjoin=(Follows.user_following_id == id),
@@ -208,3 +208,5 @@ def connect_db(app):
 
     db.app = app
     db.init_app(app)
+
+    #read models.py done at 5:32pm
