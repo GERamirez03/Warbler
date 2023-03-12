@@ -14,6 +14,13 @@ class Follows(db.Model):
 
     __tablename__ = 'follows'
 
+    """
+    This table has two foreign keys to the users table to capture
+    how one user follows another user. With the pair of followed
+    user and following user as the primary key, this prevents
+    duplicate followed-following relationships.
+    """
+
     user_being_followed_id = db.Column(
         db.Integer,
         db.ForeignKey('users.id', ondelete="cascade"),

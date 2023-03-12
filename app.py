@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -86,6 +86,8 @@ def signup():
         return redirect("/")
 
     else:
+        # import pdb
+        # pdb.set_trace()
         return render_template('users/signup.html', form=form)
 
 
@@ -113,8 +115,9 @@ def login():
 def logout():
     """Handle logout of user."""
 
-    # IMPLEMENT THIS
-
+    do_logout()
+    flash("Logout successful.") #implemented logout
+    return redirect('/login')
 
 ##############################################################################
 # General user routes:
@@ -207,11 +210,56 @@ def stop_following(follow_id):
     return redirect(f"/users/{g.user.id}/following")
 
 
-@app.route('/users/profile', methods=["GET", "POST"])
+@app.route('/users/profile', methods=["GET", "POST"]) # implmemented edit profile functionality
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    # if the user is not logged in, prevent access
+    if not g.user: 
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    # import pdb
+    # pdb.set_trace()
+
+    user = g.user #gotta use this somehow i think
+
+    form = UserEditForm(obj=user) # review how to add the components already from the object
+    
+    # validate form submission
+    if form.validate_on_submit():
+
+        # authenticate user
+        user = User.authenticate(g.user.username,
+                                 form.password.data)
+
+        # authentication successful
+        if user:
+
+            # handle illegal new username
+            try:
+                g.user.username=form.username.data #dont need to use "or" in assignment because we are pre-populating with the current user details
+                g.user.email=form.email.data
+                g.user.image_url=form.image_url.data
+                g.user.header_image_url=form.header_image_url.data
+                g.user.bio=form.bio.data
+
+                db.session.commit()
+                
+            except IntegrityError:
+                flash("Username already taken", 'danger')
+                return redirect('/users/profile')
+
+            # profile edits successful
+            flash("Profile updated!", "success")
+            return redirect(f"/users/{g.user.id}")
+
+        # authentication failed
+        flash("Incorrect password.", 'danger')
+        return redirect('/')
+
+    # render user edit form
+    return render_template('users/edit.html', form=form)
 
 
 @app.route('/users/delete', methods=["POST"])
