@@ -28,12 +28,18 @@ connect_db(app)
 ##############################################################################
 # User signup/login/logout
 
-
+# The app.before_request is a method that runs prior to each individual request receiving a response from our routes
 @app.before_request
 def add_user_to_g():
     """If we're logged in, add curr user to Flask global."""
 
+    # The purpose of this function is to initialize "g.user" as either the currently logged in
+    # user OR None if we are not logged in.
+
     if CURR_USER_KEY in session:
+
+        # Flask's g object helps us define and reference global variables for one request 
+        # Here, we use it to set the current user for easy access during handling inside of routes
         g.user = User.query.get(session[CURR_USER_KEY])
 
     else:
@@ -43,12 +49,14 @@ def add_user_to_g():
 def do_login(user):
     """Log in user."""
 
+    # to track logged in user, add their id to the flask session
     session[CURR_USER_KEY] = user.id
 
 
 def do_logout():
     """Logout user."""
 
+    # to log out, remove the user id from the flask session if it's there
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
 
@@ -340,8 +348,16 @@ def homepage():
     """
 
     if g.user:
+        # import pdb
+        # pdb.set_trace()
+
+        # user feed will be users they are following plus themselves
+        users_on_feed = [user.id for user in g.user.following]
+        users_on_feed.append(g.user.id)
+
         messages = (Message
                     .query
+                    .filter(Message.user_id.in_(users_on_feed))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
