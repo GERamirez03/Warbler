@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -284,6 +284,54 @@ def delete_user():
     db.session.commit()
 
     return redirect("/signup")
+
+##############################################################################
+# Likes routes:
+
+@app.route('/users/add_like/<int:message_id>', methods=["POST"])
+def add_like(message_id):
+    """For the current user, add a like to the target message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    if g.user.id == Message.query.filter(Message.id==message_id).first().user_id:
+        flash("Hey! No liking your own messages!", "danger")
+        return redirect("/")
+    
+    like = Likes(user_id=g.user.id, message_id=message_id)
+    db.session.add(like)
+    db.session.commit()
+
+    return redirect('/')
+
+@app.route('/users/remove_like/<int:message_id>', methods=["POST"])
+def remove_like(message_id):
+    """For the current user, remove a like from the target message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    like = Likes.query.filter(Likes.user_id==g.user.id, Likes.message_id==message_id).first()
+    db.session.delete(like)
+    db.session.commit()
+
+    return redirect('/')
+
+@app.route('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Show all messages liked by target user."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    user = User.query.get_or_404(user_id)
+    # liked_messages = user.likes
+
+    return render_template('/users/likes.html', user=user) #liked_messages=liked_messages)
 
 
 ##############################################################################
