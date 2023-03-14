@@ -27,20 +27,27 @@ from app import app
 # once for all tests --- in each test, we'll delete the data
 # and create fresh new clean test data
 
+db.drop_all()
 db.create_all()
 
 
 class UserModelTestCase(TestCase):
-    """Test views for messages."""
+    """Test model for users."""
 
     def setUp(self):
         """Create test client, add sample data."""
 
+        db.session.rollback()
         User.query.delete()
         Message.query.delete()
         Follows.query.delete()
 
         self.client = app.test_client()
+
+    def tearDown(self):
+        """Clean up fouled transactions."""
+
+        db.session.rollback()
 
     def test_user_model(self):
         """Does basic model work?"""
@@ -174,8 +181,3 @@ class UserModelTestCase(TestCase):
 
         # User.authenticate should return False when passed an incorrect password
         self.assertFalse(User.authenticate(username="testuser", password="HASHEDPASSWORD"))
-
-
-
-
-
